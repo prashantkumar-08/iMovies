@@ -1,0 +1,13 @@
+const r = require('express').Router();
+const { protect, adminOnly } = require('../middleware/auth');
+const a = require('../controllers/authController'), m = require('../controllers/movieController'), s = require('../controllers/showController'), b = require('../controllers/bookingController');
+r.post('/auth/register', a.register); r.post('/auth/login', a.login); r.get('/auth/me', protect, a.me);
+r.get('/movies', m.list); r.get('/movies/:id', m.get);
+r.post('/movies', protect, adminOnly, m.create); r.put('/movies/:id', protect, adminOnly, m.update); r.delete('/movies/:id', protect, adminOnly, m.remove);
+r.get('/favorites', protect, m.favorites); r.post('/favorites/:id', protect, m.toggleFavorite);
+r.get('/theatres', s.theatres); r.post('/theatres', protect, adminOnly, s.createTheatre);
+r.get('/movies/:movieId/shows', s.forMovie); r.post('/shows', protect, adminOnly, s.create); r.delete('/shows/:id', protect, adminOnly, s.remove);
+r.get('/shows/:id/seats', protect, s.seats);
+r.post('/bookings', protect, b.create); r.post('/bookings/:id/pay', protect, b.pay); r.get('/bookings/mine', protect, b.mine); r.post('/bookings/:id/cancel', protect, b.cancel);
+r.get('/admin/bookings', protect, adminOnly, b.all); r.get('/admin/stats', protect, adminOnly, b.stats);
+module.exports = r;

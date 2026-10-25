@@ -1,0 +1,17 @@
+const { Schema, model } = require('mongoose');
+const ref = (r) => ({ type: Schema.Types.ObjectId, ref: r, required: true });
+const t = { timestamps: true };
+const User = model('User', new Schema({ name: String, email: { type: String, required: true, unique: true, lowercase: true }, phone: String, password: { type: String, required: true, select: false }, role: { type: String, enum: ['user', 'admin'], default: 'user' } }, t));
+const Movie = model('Movie', new Schema({ title: { type: String, required: true, index: true }, genre: [{ type: String, index: true }], language: { type: String, index: true }, duration: Number, rating: Number, imdbRating: { type: Number, min: 0, max: 10 }, cast: [String], crew: [{ name: String, role: String }], director: String, ageRating: { type: String, enum: ['U', 'U/A 7+', 'U/A 13+', 'U/A 16+', 'A'], default: 'U/A 13+', index: true }, poster: String, cover: String, description: String, releaseDate: Date }, t));
+const Theatre = model('Theatre', new Schema({ name: { type: String, required: true }, city: { type: String, index: true }, location: String, screens: { type: Number, default: 1 } }, t));
+const Show = model('Show', new Schema({ movie: { ...ref('Movie'), index: true }, theatre: ref('Theatre'), screen: { type: Number, default: 1 }, startsAt: { type: Date, required: true, index: true }, price: { type: Number, required: true } }, t));
+const seatSchema = new Schema({ show: ref('Show'), label: String, status: { type: String, enum: ['available', 'locked', 'booked'], default: 'available' }, lockedBy: Schema.Types.ObjectId, lockExpires: Date });
+seatSchema.index({ show: 1, label: 1 }, { unique: true });
+const Seat = model('Seat', seatSchema);
+const Booking = model('Booking', new Schema({ user: { ...ref('User'), index: true }, show: ref('Show'), seats: [String], amount: Number, status: { type: String, enum: ['pending', 'confirmed', 'cancelled'], default: 'pending' } }, t));
+const Payment = model('Payment', new Schema({ booking: ref('Booking'), amount: Number, method: String, status: { type: String, enum: ['success', 'failed'] }, transactionId: String }, t));
+const favSchema = new Schema({ user: ref('User'), movie: ref('Movie') });
+favSchema.index({ user: 1, movie: 1 }, { unique: true });
+const Favorite = model('Favorite', favSchema);
+const Notification = model('Notification', new Schema({ user: ref('User'), message: String, read: { type: Boolean, default: false } }, t));
+module.exports = { User, Movie, Theatre, Show, Seat, Booking, Payment, Favorite, Notification };

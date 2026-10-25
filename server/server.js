@@ -1,0 +1,15 @@
+require('dotenv').config();
+const express = require('express'), http = require('http'), cors = require('cors'), mongoose = require('mongoose'), rateLimit = require('express-rate-limit');
+const { Server } = require('socket.io'), { errorHandler } = require('./middleware/auth');
+const app = express(), server = http.createServer(app);
+const origin = process.env.CLIENT_URL || 'http://localhost:5173';
+const io = new Server(server, { cors: { origin } });
+io.on('connection', (s) => { s.on('join', (id) => s.join(String(id))); s.on('leave', (id) => s.leave(String(id))); });
+app.set('io', io);
+app.use(cors({ origin })); app.use(express.json({ limit: '1mb' }));
+app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 600 }));
+app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, max: 50 }));
+app.use('/api', require('./routes'));
+app.use((req, res) => res.status(404).json({ message: 'Not found' }));
+app.use(errorHandler);
+mongoose.connect(process.env.MONGO_URI).then(() => server.listen(process.env.PORT || 5000, () => console.log('API ready'))).catch((e) => { console.error(e.message); process.exit(1); });
